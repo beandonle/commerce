@@ -1,0 +1,15 @@
+{% extends "encyclopedia/layout.html" %}
+
+{% block title%}
+    Search Results
+{% endblock %}
+
+{% block body %}
+    <h4>Could Not Find "{{ q }}"</h4>
+    <div>Similar Results: </div>
+    <ul>
+        {% for result in results %}
+            <a href="{{ result }}"><li>{{ result }}</li></a>
+        {% endfor %}
+    </ul>
+{% endblock %}
