@@ -1,18 +1,21 @@
 from django.shortcuts import render
 from django.http import HttpResponseRedirect
 from django.urls import reverse
+from django.contrib import messages
+from django import forms
 
 from . import util
 import markdown2
 import random
 
+class NewEntryForm(forms.Form):
+    title = forms.CharField(label="Title")
+    content = forms.CharField(label="Content")
+
 def index(request):
     return render(request, "encyclopedia/index.html", {
         "entries": util.list_entries()
     })
-
-def newPage(request): 
-    return render(request, "enclyclopedia/newPage.html")
 
 def randPage(request):
     label = random.choice(util.list_entries())
@@ -29,9 +32,8 @@ def title(request, label):
         })
     else:
         return render(request, "encyclopedia/error.html", {
-            "label": label
+            "message": 'The requested page ' + label + ' was not found.'
         })
-
 
 def search(request):
     if request.method == "POST":
@@ -51,8 +53,40 @@ def search(request):
             })
         else:
             return render(request, "encyclopedia/error.html", {
-                "label": q
+                "message": 'Search for ' + q + ' is invalid.'
             })
 
-def edit(request, page):
-    txtArea = page
+def edit(request, label):
+    if request.method == "GET":
+        content = util.get_entry(label)
+        return render(request, "encyclopedia/editPage.html", {
+            "content" : content,
+            "title" : label
+        })
+    elif request.method == "POST":
+            title = request.POST["title"]
+            content = request.POST["editedContent"]
+            util.save_entry(title, content)
+            return HttpResponseRedirect(reverse("encyclopedia:title", args=(title,)))
+
+def newPage(request): 
+    if request.method == "POST":
+        if (request.POST.get("title") in util.list_entries()):
+            title = request.POST.get("title")
+            return render(request, "encyclopedia/error.html", {
+                "message" : 'The entry ' + title + ' already exists.'
+            })
+
+        form = NewEntryForm(request.POST)
+        if form.is_valid():
+            title = form.cleaned_data["title"]
+            content = form.cleaned_data["content"]
+            util.save_entry(title, content)
+            return HttpResponseRedirect(reverse("encyclopedia:title", args=(title,)))
+        else:
+                return render(request, "encyclopedia/newPage.html", {
+                    "form" : form
+                })
+    return render(request, "encyclopedia/newPage.html", {
+        "form" : NewEntryForm()
+    })
