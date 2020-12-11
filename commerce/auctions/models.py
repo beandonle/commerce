@@ -7,3 +7,6 @@ class User(AbstractUser):
 
 class Listing():
     pass 
+
+class Bids():
+    pass
